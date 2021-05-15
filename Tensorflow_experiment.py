@@ -19,8 +19,9 @@ from tensorflow.keras import backend as K
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from tensorflow_core.python.keras.layers import GaussianNoise
 
-ROOT_PATH = "your/path/to/Data"
+ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Data"
 train_dir = os.path.join(ROOT_PATH, "TrainingData")
 val_dir = os.path.join(ROOT_PATH, "ValidationData")
 
@@ -43,7 +44,8 @@ class ConvAutoencoder:
         x = inputs
         # loop over the number of filters
         for f in filters:
-            # apply a CONV => RELU => BN operation
+            # apply a Noise => CONV => RELU => BN operation
+            x = GaussianNoise(stddev=0.5)(x) #Noise added to images
             x = Conv2D(f, (3, 3), strides=2, padding="same")(x)
             x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
             x = BatchNormalization(axis=chanDim)(x)
@@ -92,7 +94,7 @@ val_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "ValidationData"),
     class_mode="input", target_size=SHAPE, batch_size=BS,
 )
-hist = autoencoder.fit(train_gen, validation_data=val_gen, epochs=EPOCHS, batch_size=BS)
+hist = autoencoder.fit(train_gen, validation_data=val_gen, epochs=EPOCHS)
 
 print("[INFO] making predictions...")
 decoded = autoencoder.predict(val_gen)
