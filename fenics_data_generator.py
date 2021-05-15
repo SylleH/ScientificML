@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors as clr
 from fenics import *
 from boxfield import *
 import random
@@ -30,11 +31,11 @@ def GenerateFunctions(Nx,Ny):
     a_n = []
     b_n = []
     for j in range(0, Nx):
-        # any random integer from 1 to 15
-        a_n.append(random.randint(1, 15))
+        # any random integer from 1 to 100
+        a_n.append(random.randint(1, 100))
     for j in range(0, Ny):
-        # any random integer from 1 to 15
-        b_n.append(random.randint(1, 15))
+        # any random integer from 1 to 100
+        b_n.append(random.randint(1, 100))
     print(a_n)
     print(b_n)
     xx = Expression('x[0]', degree=1)
@@ -56,20 +57,24 @@ def ComputeSolution(f,v):
     solve(a == L, u, bc)
     return u
 
-def GenerateImages(u, a_n, b_n):
+def GenerateImages(u, a_n, b_n, i, N):
     # Create plot with certain resolution
     u_box = FEniCSBoxField(u, (k, l))
     u_ = u_box.values
     # save plot to image
-    cmap = plt.cm.jet # a colormap and a normalization instance
+    #cmap_gray = plt.gray # a colormap grey
+    cmap_rgba = plt.cm.jet # a colormap jet
     norm = plt.Normalize(vmin=u_.min(), vmax=u_.max())  # map the normalized data to colors
-    image = cmap(norm(u_))  # image is now RGBA (512x512x4)
-
+    image = cmap_rgba(norm(u_))  # image is now RGBA
 
     plot_title = 'a_n = %s,b_n = %s' % (a_n, b_n)
-    plot_name = 'data/plot_%d.png' % (i)  # can be changed to .png
     plt.title(plot_title)  # possibility to make the title of the plots reference the a_n and b_n
-    plt.imsave(plot_name, image)
+    if i<(0.8*N):   #80% trainingdata
+        plot_name = 'data/TrainingData/data_sines/plot_%d.png' % (i)
+        plt.imsave(plot_name, image)
+    else:           #20% validationdata
+        plot_name = 'data/ValidationData/data_sines/plot_%d.png' % (i)
+        plt.imsave(plot_name, image)
 
 def PlotShow():
     plt.imshow(u_, interpolation='nearest')
@@ -91,7 +96,7 @@ def ErrorAnalysis(u_D, u):
 for i in range(N):
     f, a_n, b_n  = GenerateFunctions(Nx,Ny)
     u = ComputeSolution(f,v)
-    GenerateImages(u, a_n,b_n)
+    GenerateImages(u, a_n,b_n, i, N)
 
 
 
