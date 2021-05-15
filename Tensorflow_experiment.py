@@ -28,8 +28,8 @@ val_dir = os.path.join(ROOT_PATH, "ValidationData")
 IMAGES = ROOT_PATH
 SHAPE = (100, 100)
 INIT_LR = 1e-3
-EPOCHS = 10
-BS = 1
+EPOCHS = 15
+BS = 5
 
 
 class ConvAutoencoder:
@@ -90,11 +90,11 @@ autoencoder.compile(loss="mse", optimizer=opt)
 image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0 / 255)
 train_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "TrainingData"),
-    class_mode="input", target_size=SHAPE, batch_size=BS,
+    class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True,
 )
 val_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "ValidationData"),
-    class_mode="input", target_size=SHAPE, batch_size=BS,
+    class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True
 )
 hist = autoencoder.fit(train_gen, validation_data=val_gen, epochs=EPOCHS)
 
