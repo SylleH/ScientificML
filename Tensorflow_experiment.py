@@ -34,7 +34,7 @@ BS = 1
 
 class ConvAutoencoder:
     @staticmethod
-    def build(width, height, depth, filters=(100, 50), latentDim=25):
+    def build(width, height, depth, filters=(25,50), latentDim=25):
         # initialize the input shape to be "channels last" along with
 		# the channels dimension itself
         inputShape = (height, width, depth)
