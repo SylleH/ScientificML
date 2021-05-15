@@ -29,7 +29,7 @@ IMAGES = ROOT_PATH
 SHAPE = (100, 100)
 INIT_LR = 1e-3
 EPOCHS = 15
-BS = 5
+BS = 2
 
 
 class ConvAutoencoder:
