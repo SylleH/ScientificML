@@ -19,7 +19,7 @@ from tensorflow.keras import backend as K
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from tensorflow_core.python.keras.layers import GaussianNoise
+from tensorflow_core.python.keras.layers import GaussianNoise, Dropout
 
 ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Data"
 train_dir = os.path.join(ROOT_PATH, "TrainingData")
@@ -42,10 +42,12 @@ class ConvAutoencoder:
         # define the input to the encoder
         inputs = Input(shape=inputShape)
         x = inputs
+        # Adding noise: keras.layers.Dropout(0.5)(x) or keras.layers.GaussianNoise(stddev = 0.2)(x)
+        # x = Dropout(0.5)(x) #Noise added to images
+        x = GaussianNoise(stddev = 0.2)(x)
         # loop over the number of filters
         for f in filters:
-            # apply a Noise => CONV => RELU => BN operation
-            x = GaussianNoise(stddev=0.5)(x) #Noise added to images
+            # apply a CONV => RELU => BN operation
             x = Conv2D(f, (3, 3), strides=2, padding="same")(x)
             x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
             x = BatchNormalization(axis=chanDim)(x)
