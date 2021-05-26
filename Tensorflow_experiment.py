@@ -90,11 +90,11 @@ autoencoder.compile(loss="mse", optimizer=opt)
 image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0 / 255)
 train_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "TrainingData"),
-    class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True,
+    class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True,color_mode='rgb',
 )
 val_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "ValidationData"),
-    class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True
+    class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True,color_mode='rgb',
 )
 hist = autoencoder.fit(train_gen, validation_data=val_gen, epochs=EPOCHS)
 
