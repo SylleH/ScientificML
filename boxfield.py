@@ -5,8 +5,7 @@ Class for a scalar (or vector) field over a BoxGrid or UniformBoxGrid grid.
 """
 
 from numpy import zeros, array, transpose, ndarray, linspace, meshgrid
-
-import fenics
+from fenics import *
 
 __all__ = ['BoxField', 'BoxGrid', 'UniformBoxGrid', 'X', 'Y', 'Z',
            'FEniCSBoxField', 'update_from_fenics_array']
@@ -982,10 +981,10 @@ def FEniCSBoxField(fenics_function, division=None, uniform_mesh=True):
     if element.degree() != 1:
         if element.value_size() == 1:
             fenics_function \
-              = interpolate(u, FunctionSpace(fenics_mesh, 'P', 1))
+              = interpolate(fenics_function, FunctionSpace(fenics_mesh, 'P', 1))
         else:
             fenics_function \
-              = interpolate(u, VectorFunctionSpace(fenics_mesh, 'P', 1,
+              = interpolate(fenics_function, VectorFunctionSpace(fenics_mesh, 'P', 1,
                                                    element.value_size()))
 
     import dolfin
@@ -993,7 +992,7 @@ def FEniCSBoxField(fenics_function, division=None, uniform_mesh=True):
     if dolfin.__version__[:3] == "1.0":
         nodal_values = fenics_function.vector().array().copy()
     else:
-        d2v = fenics.dof_to_vertex_map(fenics_function.function_space())
+        d2v = dof_to_vertex_map(fenics_function.function_space())
         nodal_values = np.array(fenics_function.vector()) #fenics_function.vector().array().copy()
         nodal_values[d2v] = np.array(fenics_function.vector())
 
