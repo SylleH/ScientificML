@@ -69,12 +69,16 @@ def GenerateImages(u, a_n, b_n, i, N):
 
     plot_title = 'a_n = %s,b_n = %s' % (a_n, b_n)
     plt.title(plot_title)  # possibility to make the title of the plots reference the a_n and b_n
-    if i<(0.8*N):   #80% trainingdata
-        plot_name = 'data/TrainingData/data_sines/plot_%d.png' % (i)
-        plt.imsave(plot_name, image)
-    else:           #20% validationdata
-        plot_name = 'data/ValidationData/data_sines/plot_%d.png' % (i)
-        plt.imsave(plot_name, image)
+    plot_name = 'data/class_1/plot_%d.png' % (i)
+    plt.imsave(plot_name, image)
+
+    # plt.title(plot_title)  # possibility to make the title of the plots reference the a_n and b_n
+    # if i<(0.8*N):   #80% trainingdata
+    #     plot_name = 'data/TrainingData/data_sines/plot_%d.png' % (i)
+    #     plt.imsave(plot_name, image)
+    # else:           #20% validationdata
+    #     plot_name = 'data/ValidationData/data_sines/plot_%d.png' % (i)
+    #     plt.imsave(plot_name, image)
 
 def PlotShow():
     plt.imshow(u_, interpolation='nearest')

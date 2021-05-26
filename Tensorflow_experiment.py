@@ -21,20 +21,15 @@ import os
 import matplotlib.pyplot as plt
 #from tensorflow_core.python.keras.layers import GaussianNoise, Dropout
 
-ROOT_PATH = "/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML/Data"
+ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Data_Sylle"
 train_dir = os.path.join(ROOT_PATH, "TrainingData")
 val_dir = os.path.join(ROOT_PATH, "ValidationData")
 
 IMAGES = ROOT_PATH
 SHAPE = (100, 100)
 INIT_LR = 1e-3
-<<<<<<< Updated upstream
-EPOCHS = 15
-BS = 2
-=======
-EPOCHS = 5
+EPOCHS = 10
 BS = 1
->>>>>>> Stashed changes
 
 
 class ConvAutoencoder:
