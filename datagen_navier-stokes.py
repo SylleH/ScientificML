@@ -103,8 +103,8 @@ solve(A3, u_.vector(), b3)
 
 
 # Plot solution
-u_inter = interpolate(u_,V)
-uplot =plot(u_inter, title="Velocity")
-uplot.set_cmap = ('gray')
-plt.savefig("velocity.png")
+plot(u_, title="Velocity")
+#uplot.set_cmap = ('gray')
+plt.imshow()
+#plt.savefig("velocity.png")
 
