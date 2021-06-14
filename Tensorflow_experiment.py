@@ -7,7 +7,9 @@
 import tensorflow as tf
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import Conv2DTranspose
+from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import ReLU
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Flatten
@@ -19,9 +21,9 @@ from tensorflow.keras import backend as K
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-#from tensorflow_core.python.keras.layers import GaussianNoise, Dropout
+from tensorflow.python.keras.layers import GaussianNoise, Dropout
 
-ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Data_Sylle"
+ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Data"
 train_dir = os.path.join(ROOT_PATH, "TrainingData")
 val_dir = os.path.join(ROOT_PATH, "ValidationData")
 
@@ -44,11 +46,12 @@ class ConvAutoencoder:
         x = inputs
         # Adding noise: keras.layers.Dropout(0.5)(x) or keras.layers.GaussianNoise(stddev = 0.2)(x)
         # x = Dropout(0.5)(x) #Noise added to images
-        #x = GaussianNoise(stddev = 0.2)(x)
+        x = GaussianNoise(stddev = 1)(x)
         # loop over the number of filters
         for f in filters:
             # apply a CONV => RELU => BN operation
             x = Conv2D(f, (3, 3), strides=2, padding="same")(x)
+            x = MaxPooling2D((3,3), strides = None, padding="same")(x)
             x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
             x = BatchNormalization(axis=chanDim)(x)
         # flatten the network and then construct our latent vector
@@ -69,6 +72,7 @@ class ConvAutoencoder:
         for f in filters[::-1]:
             # apply a CONV_TRANSPOSE => RELU => BN operation
             x = Conv2DTranspose(f, (3, 3), strides=2,padding="same")(x)
+            x = MaxPooling2D((3,3), strides = None, padding="same")(x)
             x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
             x = BatchNormalization(axis=chanDim)(x)
         # apply a single CONV_TRANSPOSE layer used to recover the
@@ -86,12 +90,15 @@ class ConvAutoencoder:
 (encoder, decoder, autoencoder) = ConvAutoencoder.build(SHAPE[0], SHAPE[1], 3)
 opt = tf.optimizers.Adam(learning_rate=INIT_LR, decay=INIT_LR / EPOCHS)
 autoencoder.compile(loss="mse", optimizer=opt)
+autoencoder.summary()
 
 image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0 / 255)
+
 train_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "TrainingData"),
     class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True,color_mode='rgb',
 )
+
 val_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "ValidationData"),
     class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True,color_mode='rgb',
