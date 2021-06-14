@@ -28,7 +28,7 @@ train_dir = os.path.join(ROOT_PATH, "TrainingData")
 val_dir = os.path.join(ROOT_PATH, "ValidationData")
 
 IMAGES = ROOT_PATH
-SHAPE = (100, 100)
+SHAPE = (32, 32)
 INIT_LR = 1e-3
 EPOCHS = 10
 BS = 1
@@ -36,7 +36,7 @@ BS = 1
 
 class ConvAutoencoder:
     @staticmethod
-    def build(width, height, depth, filters=(25,50), latentDim=25):
+    def build(width, height, depth, filters=(32,64), latentDim=25):
         # initialize the input shape to be "channels last" along with
 		# the channels dimension itself
         inputShape = (height, width, depth)
@@ -46,12 +46,11 @@ class ConvAutoencoder:
         x = inputs
         # Adding noise: keras.layers.Dropout(0.5)(x) or keras.layers.GaussianNoise(stddev = 0.2)(x)
         # x = Dropout(0.5)(x) #Noise added to images
-        x = GaussianNoise(stddev = 1)(x)
+        # x = GaussianNoise(stddev = 1)(x)
         # loop over the number of filters
         for f in filters:
             # apply a CONV => RELU => BN operation
             x = Conv2D(f, (3, 3), strides=2, padding="same")(x)
-            x = MaxPooling2D((3,3), strides = None, padding="same")(x)
             x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
             x = BatchNormalization(axis=chanDim)(x)
         # flatten the network and then construct our latent vector
@@ -72,7 +71,6 @@ class ConvAutoencoder:
         for f in filters[::-1]:
             # apply a CONV_TRANSPOSE => RELU => BN operation
             x = Conv2DTranspose(f, (3, 3), strides=2,padding="same")(x)
-            x = MaxPooling2D((3,3), strides = None, padding="same")(x)
             x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
             x = BatchNormalization(axis=chanDim)(x)
         # apply a single CONV_TRANSPOSE layer used to recover the
@@ -90,7 +88,8 @@ class ConvAutoencoder:
 (encoder, decoder, autoencoder) = ConvAutoencoder.build(SHAPE[0], SHAPE[1], 3)
 opt = tf.optimizers.Adam(learning_rate=INIT_LR, decay=INIT_LR / EPOCHS)
 autoencoder.compile(loss="mse", optimizer=opt)
-autoencoder.summary()
+encoder.summary()
+decoder.summary()
 
 image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0 / 255)
 
@@ -103,16 +102,36 @@ val_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "ValidationData"),
     class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True,color_mode='rgb',
 )
+
+for image_batch, labels_batch in train_gen:
+    print(image_batch.shape)
+    print(labels_batch.shape)
+    break
+
+for image_batch, labels_batch in val_gen:
+    print(image_batch.shape)
+    print(labels_batch.shape)
+    break
+
 hist = autoencoder.fit(train_gen, validation_data=val_gen, epochs=EPOCHS)
 
 print("[INFO] making predictions...")
 decoded = autoencoder.predict(val_gen)
 
+# array = tf.keras.preprocessing.image.img_to_array(train_gen, data_format=None, dtype=None)
 
 for i in range (0,2):
-    recon=(decoded[i] * 255).astype("uint8")
+    recon = (decoded[i] * 255).astype("uint8")
     plt.imshow(recon)
     plt.show()
+
+for each in train_gen:
+    print(each[0].shape)
+    break
+
+print(type(decoded))
+print(type(train_gen))
+
 
 # construct a plot that plots and saves the training history
 N = np.arange(0, EPOCHS)
