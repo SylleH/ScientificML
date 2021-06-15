@@ -24,12 +24,12 @@ import os
 import matplotlib.pyplot as plt
 #from tensorflow_core.python.keras.layers import GaussianNoise, Dropout
 
-ROOT_PATH = "/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML_local/Flow_data_normalized"
+ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Flow_data_normalized"
 train_dir = os.path.join(ROOT_PATH, "TrainingData")
 val_dir = os.path.join(ROOT_PATH, "ValidationData")
 
 IMAGES = ROOT_PATH
-SHAPE = (52, 152) #height, width
+SHAPE = (32, 3*32) #height, width
 INIT_LR = 1e-3
 
 EPOCHS = 10
@@ -52,15 +52,20 @@ class ConvAutoencoder:
         #x = GaussianNoise(stddev = 0.2)(x)
 
         # apply a CONV => RELU => BN operation
-        x = Conv2D(filters=16, kernel_size=2, strides=2, padding="same")(x)
+        x = Conv2D(filters=32, kernel_size=1, strides=1, padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
         x = MaxPool2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
 
-        x = Conv2D(filters=32, kernel_size=2, strides=1, padding="same")(x)
+        x = Conv2D(filters=64, kernel_size=1, strides=1, padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        #x = MaxPool2D(5)(x)
+        x = MaxPool2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
+
+        x = Conv2D(filters=64, kernel_size=2, strides=1, padding="same")(x)
+        x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
+        # #x = MaxPool2D(5)(x)
+        #
 
         # flatten the network and then construct our latent vector
         volumeSize = K.int_shape(x)
@@ -77,14 +82,20 @@ class ConvAutoencoder:
         x = Reshape((volumeSize[1], volumeSize[2], volumeSize[3]))(x)
 
         # apply a CONV_TRANSPOSE => RELU => BN operation
-        x = Conv2DTranspose(filters=32, kernel_size=2, strides=1,padding="same")(x)
+        x = Conv2DTranspose(filters=64, kernel_size=1, strides=1,padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        #x = UpSampling2D(5)(x)
+        #x = MaxPool2D(2)(x)
+        x = UpSampling2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
 
-        x = Conv2DTranspose(filters=16, kernel_size=2, strides=2, padding="same")(x)
+        x = Conv2DTranspose(filters=64, kernel_size=1, strides=1, padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
         x = UpSampling2D(2)(x)
+        x = BatchNormalization(axis=chanDim)(x)
+
+        x = Conv2DTranspose(filters=32, kernel_size=2, strides=1, padding="same")(x)
+        x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
+        # x = UpSampling2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
 
         # apply a single CONV_TRANSPOSE layer used to recover the
@@ -108,13 +119,23 @@ decoder.summary()
 image_generator = tf.keras.preprocessing.image.ImageDataGenerator()
 train_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "TrainingData"),
-    class_mode="input", target_size=SHAPE, color_mode="grayscale", batch_size=BS,shuffle=True
+    class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True
 )
 val_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "ValidationData"),
-    class_mode="input", target_size=SHAPE,color_mode="grayscale",batch_size=BS,shuffle=True
+    class_mode="input", target_size=SHAPE,batch_size=BS,shuffle=True
 )
 hist = autoencoder.fit(train_gen, validation_data=val_gen, epochs=EPOCHS)
+
+for image_batch, labels_batch in train_gen:
+    print(image_batch.shape)
+    print(labels_batch.shape)
+    break
+
+for image_batch, labels_batch in val_gen:
+    print(image_batch.shape)
+    print(labels_batch.shape)
+    break
 
 print("[INFO] making predictions...")
 decoded = autoencoder.predict(val_gen)
@@ -122,7 +143,7 @@ decoded = autoencoder.predict(val_gen)
 
 for i in range (0,2):
     recon=(decoded[i])
-    plt.imshow(recon, cmap='gray')
+    plt.imshow(recon, cmap='jet')
     plt.show()
 
 # construct a plot that plots and saves the training history
@@ -136,4 +157,3 @@ plt.xlabel("Epoch #")
 plt.ylabel("Loss")
 plt.legend(loc="lower left")
 plt.show()
-
