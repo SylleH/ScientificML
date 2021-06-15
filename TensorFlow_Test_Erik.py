@@ -84,3 +84,10 @@ for i in range (0,2):
     recon=(decoded[i] * 255).astype("uint8")
     plt.imshow(recon)
     plt.show()
+
+for image, label in train_ds:
+    index += 1
+plt.subplot(3, 3, index)
+plt.imshow(image)
+plt.title("Class: {}".format(class_names[label]))
+plt.axis("off")

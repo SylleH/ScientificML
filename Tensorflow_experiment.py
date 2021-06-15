@@ -24,22 +24,22 @@ import os
 import matplotlib.pyplot as plt
 #from tensorflow_core.python.keras.layers import GaussianNoise, Dropout
 
-ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Flow_data_normalized"
+ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Data"
 train_dir = os.path.join(ROOT_PATH, "TrainingData")
 val_dir = os.path.join(ROOT_PATH, "ValidationData")
 
 IMAGES = ROOT_PATH
-SHAPE = (32, 3*32) #height, width
+SHAPE = (52, 52) #height, width
 INIT_LR = 1e-3
 
-EPOCHS = 10
+EPOCHS = 5
 BS = 1
 
 
 
 class ConvAutoencoder:
     @staticmethod
-    def build(height, width, depth,  latentDim=100):
+    def build(height, width, depth,  latentDim=1024):
         # initialize the input shape to be "channels last" along with
 		# the channels dimension itself
         inputShape = (height, width, depth)
@@ -52,20 +52,20 @@ class ConvAutoencoder:
         #x = GaussianNoise(stddev = 0.2)(x)
 
         # apply a CONV => RELU => BN operation
-        x = Conv2D(filters=32, kernel_size=1, strides=1, padding="same")(x)
+        x = Conv2D(filters=128, kernel_size=1, strides=2, padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        x = MaxPool2D(2)(x)
+        # x = MaxPool2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
 
-        x = Conv2D(filters=64, kernel_size=1, strides=1, padding="same")(x)
+        x = Conv2D(filters=256, kernel_size=1, strides=2, padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        x = MaxPool2D(2)(x)
+        # x = MaxPool2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
 
-        x = Conv2D(filters=64, kernel_size=2, strides=1, padding="same")(x)
-        x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        # #x = MaxPool2D(5)(x)
-        #
+        # x = Conv2D(filters=64, kernel_size=2, strides=1, padding="same")(x)
+        # x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
+        # # #x = MaxPool2D(5)(x)
+        # #
 
         # flatten the network and then construct our latent vector
         volumeSize = K.int_shape(x)
@@ -82,25 +82,25 @@ class ConvAutoencoder:
         x = Reshape((volumeSize[1], volumeSize[2], volumeSize[3]))(x)
 
         # apply a CONV_TRANSPOSE => RELU => BN operation
-        x = Conv2DTranspose(filters=64, kernel_size=1, strides=1,padding="same")(x)
+        x = Conv2DTranspose(filters=256, kernel_size=1, strides=2,padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
         #x = MaxPool2D(2)(x)
-        x = UpSampling2D(2)(x)
+        # x = UpSampling2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
 
-        x = Conv2DTranspose(filters=64, kernel_size=1, strides=1, padding="same")(x)
-        x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        x = UpSampling2D(2)(x)
-        x = BatchNormalization(axis=chanDim)(x)
-
-        x = Conv2DTranspose(filters=32, kernel_size=2, strides=1, padding="same")(x)
+        x = Conv2DTranspose(filters=128, kernel_size=1, strides=2, padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
         # x = UpSampling2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
 
+        # x = Conv2DTranspose(filters=32, kernel_size=2, strides=1, padding="same")(x)
+        # x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
+        # # x = UpSampling2D(2)(x)
+        # x = BatchNormalization(axis=chanDim)(x)
+
         # apply a single CONV_TRANSPOSE layer used to recover the
         # original depth of the image
-        x = Conv2D(depth, (3, 3), padding="same")(x)
+        x = Conv2D(depth, (4, 4), padding="same")(x)
         outputs = Activation("sigmoid")(x)
         # build the decoder model
         decoder = Model(latentInputs, outputs, name="decoder")
@@ -110,13 +110,13 @@ class ConvAutoencoder:
         return (encoder, decoder, autoencoder)
 
 
-(encoder, decoder, autoencoder) = ConvAutoencoder.build(SHAPE[0], SHAPE[1], 1)
+(encoder, decoder, autoencoder) = ConvAutoencoder.build(SHAPE[0], SHAPE[1], 3)
 opt = tf.optimizers.Adam(learning_rate=INIT_LR, decay=INIT_LR / EPOCHS)
 autoencoder.compile(loss="mse", optimizer=opt)
 encoder.summary()
 decoder.summary()
 
-image_generator = tf.keras.preprocessing.image.ImageDataGenerator()
+image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0 / 255)
 train_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "TrainingData"),
     class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True
@@ -145,6 +145,14 @@ for i in range (0,2):
     recon=(decoded[i])
     plt.imshow(recon, cmap='jet')
     plt.show()
+
+index = 0
+for image, label in train_gen.take(9):
+    index += 1
+plt.subplot(3, 3, index)
+plt.imshow(image)
+plt.title("Class: {}".format(class_names[label]))
+plt.axis("off")
 
 # construct a plot that plots and saves the training history
 N = np.arange(0, EPOCHS)
