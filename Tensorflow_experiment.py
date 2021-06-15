@@ -1,42 +1,45 @@
-#FOLLOWED TUTORIAL:https://www.pyimagesearch.com/2020/03/02/anomaly-detection-with-keras-tensorflow-and-deep-learning/
-#Author: S.Hoogeveen
-#Machine learning project for Special Topics in Computational Science & Engineering: Scientific Machine Learning, MSc Applied Mathematics, TU Delft
-
+"""
+FOLLOWED TUTORIAL:https://www.pyimagesearch.com/2020/03/02/anomaly-detection-with-keras-tensorflow-and-deep-learning/
+Author: S.Hoogeveen
+Machine learning project for Special Topics in Computational Science & Engineering: Scientific Machine Learning, MSc Applied Mathematics, TU Delft
+"""
 
 # import the necessary packages
 import tensorflow as tf
 from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.layers import Conv2D
-from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import Conv2DTranspose
-from tensorflow.keras.layers import MaxPooling2D
 from tensorflow.keras.layers import ReLU
 from tensorflow.keras.layers import Activation
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Reshape
 from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import MaxPool2D
+from tensorflow.keras.layers import UpSampling2D
 from tensorflow.keras.models import Model
 from tensorflow.keras import backend as K
 import numpy as np
 import os
 import matplotlib.pyplot as plt
-from tensorflow.python.keras.layers import GaussianNoise, Dropout
+#from tensorflow_core.python.keras.layers import GaussianNoise, Dropout
 
-ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Data"
+ROOT_PATH = "/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML_local/Flow_data_normalized"
 train_dir = os.path.join(ROOT_PATH, "TrainingData")
 val_dir = os.path.join(ROOT_PATH, "ValidationData")
 
 IMAGES = ROOT_PATH
-SHAPE = (32, 32)
+SHAPE = (52, 152) #height, width
 INIT_LR = 1e-3
+
 EPOCHS = 10
 BS = 1
 
 
+
 class ConvAutoencoder:
     @staticmethod
-    def build(width, height, depth, filters=(32,64), latentDim=25):
+    def build(height, width, depth,  latentDim=100):
         # initialize the input shape to be "channels last" along with
 		# the channels dimension itself
         inputShape = (height, width, depth)
@@ -46,13 +49,19 @@ class ConvAutoencoder:
         x = inputs
         # Adding noise: keras.layers.Dropout(0.5)(x) or keras.layers.GaussianNoise(stddev = 0.2)(x)
         # x = Dropout(0.5)(x) #Noise added to images
-        # x = GaussianNoise(stddev = 1)(x)
-        # loop over the number of filters
-        for f in filters:
-            # apply a CONV => RELU => BN operation
-            x = Conv2D(f, (3, 3), strides=2, padding="same")(x)
-            x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-            x = BatchNormalization(axis=chanDim)(x)
+        #x = GaussianNoise(stddev = 0.2)(x)
+
+        # apply a CONV => RELU => BN operation
+        x = Conv2D(filters=16, kernel_size=2, strides=2, padding="same")(x)
+        x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
+        x = MaxPool2D(2)(x)
+        x = BatchNormalization(axis=chanDim)(x)
+
+        x = Conv2D(filters=32, kernel_size=2, strides=1, padding="same")(x)
+        x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
+        #x = MaxPool2D(5)(x)
+        x = BatchNormalization(axis=chanDim)(x)
+
         # flatten the network and then construct our latent vector
         volumeSize = K.int_shape(x)
         x = Flatten()(x)
@@ -63,19 +72,24 @@ class ConvAutoencoder:
 
         # start building the decoder model which will accept the
 		# output of the encoder as its inputs
-        latentInputs = Input(shape=(latentDim,))
+        latentInputs = Input(shape=(latentDim))
         x = Dense(np.prod(volumeSize[1:]))(latentInputs)
         x = Reshape((volumeSize[1], volumeSize[2], volumeSize[3]))(x)
-        # loop over our number of filters again, but this time in
-        # reverse order
-        for f in filters[::-1]:
-            # apply a CONV_TRANSPOSE => RELU => BN operation
-            x = Conv2DTranspose(f, (3, 3), strides=2,padding="same")(x)
-            x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-            x = BatchNormalization(axis=chanDim)(x)
+
+        # apply a CONV_TRANSPOSE => RELU => BN operation
+        x = Conv2DTranspose(filters=32, kernel_size=2, strides=1,padding="same")(x)
+        x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
+        #x = UpSampling2D(5)(x)
+        x = BatchNormalization(axis=chanDim)(x)
+
+        x = Conv2DTranspose(filters=16, kernel_size=2, strides=2, padding="same")(x)
+        x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
+        x = UpSampling2D(2)(x)
+        x = BatchNormalization(axis=chanDim)(x)
+
         # apply a single CONV_TRANSPOSE layer used to recover the
         # original depth of the image
-        x = Conv2DTranspose(depth, (3, 3), padding="same")(x)
+        x = Conv2D(depth, (3, 3), padding="same")(x)
         outputs = Activation("sigmoid")(x)
         # build the decoder model
         decoder = Model(latentInputs, outputs, name="decoder")
@@ -85,53 +99,31 @@ class ConvAutoencoder:
         return (encoder, decoder, autoencoder)
 
 
-(encoder, decoder, autoencoder) = ConvAutoencoder.build(SHAPE[0], SHAPE[1], 3)
+(encoder, decoder, autoencoder) = ConvAutoencoder.build(SHAPE[0], SHAPE[1], 1)
 opt = tf.optimizers.Adam(learning_rate=INIT_LR, decay=INIT_LR / EPOCHS)
 autoencoder.compile(loss="mse", optimizer=opt)
 encoder.summary()
 decoder.summary()
 
-image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0 / 255)
-
+image_generator = tf.keras.preprocessing.image.ImageDataGenerator()
 train_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "TrainingData"),
-    class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True,color_mode='rgb',
+    class_mode="input", target_size=SHAPE, color_mode="grayscale", batch_size=BS,shuffle=True
 )
-
 val_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "ValidationData"),
-    class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True,color_mode='rgb',
+    class_mode="input", target_size=SHAPE,color_mode="grayscale",batch_size=BS,shuffle=True
 )
-
-for image_batch, labels_batch in train_gen:
-    print(image_batch.shape)
-    print(labels_batch.shape)
-    break
-
-for image_batch, labels_batch in val_gen:
-    print(image_batch.shape)
-    print(labels_batch.shape)
-    break
-
 hist = autoencoder.fit(train_gen, validation_data=val_gen, epochs=EPOCHS)
 
 print("[INFO] making predictions...")
 decoded = autoencoder.predict(val_gen)
 
-# array = tf.keras.preprocessing.image.img_to_array(train_gen, data_format=None, dtype=None)
 
 for i in range (0,2):
-    recon = (decoded[i] * 255).astype("uint8")
-    plt.imshow(recon)
+    recon=(decoded[i])
+    plt.imshow(recon, cmap='gray')
     plt.show()
-
-for each in train_gen:
-    print(each[0].shape)
-    break
-
-print(type(decoded))
-print(type(train_gen))
-
 
 # construct a plot that plots and saves the training history
 N = np.arange(0, EPOCHS)
