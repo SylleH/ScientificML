@@ -12,14 +12,11 @@ import pathlib
 #setup data
 import os
 
-data_dir = "/Users/eriksieburgh/PycharmProjects/ScientificML/Erik_Flow_data_normalized"
+data_dir = "/Users/eriksieburgh/Desktop/TUdelft/M-AM/Semester 2/SML_Special Topic CSE/Data_files/Flow_data_color"
 
-batch_size = 2 #This only seems to work when batch_size = 1
-EPOCHS = 10
-SHAPE = (32, 64)
-
-train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
-    rescale=1./255)
+batch_size = 1 #This only seems to work when batch_size = 1
+EPOCHS = 20
+SHAPE = (32, 96)
 
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
     data_dir,
@@ -29,7 +26,8 @@ train_ds = tf.keras.preprocessing.image_dataset_from_directory(
     image_size=(SHAPE[0], SHAPE[1]),
     batch_size=batch_size,
     shuffle=True,
-    color_mode="grayscale")
+    label_mode=None,
+    color_mode="rgb")
 
 val_ds = tf.keras.preprocessing.image_dataset_from_directory(
     data_dir,
@@ -39,11 +37,16 @@ val_ds = tf.keras.preprocessing.image_dataset_from_directory(
     image_size=(SHAPE[0], SHAPE[1]),
     batch_size=batch_size,
     shuffle=True,
-    color_mode="grayscale")
+    label_mode=None,
+    color_mode="rgb")
 
 # Rescaling of dataset is still needed
+normalization_layer = layers.experimental.preprocessing.Rescaling(scale= 1./255)
 
-input = layers.Input(shape=(32, 64, 1))
+normalized_train_ds = train_ds.map(lambda x: normalization_layer(x))
+normalized_val_ds = val_ds.map(lambda x: normalization_layer(x))
+
+input = layers.Input(shape=(32, 96, 3))
 chanDim = -1
 
 # Encoder
@@ -64,27 +67,26 @@ autoencoder = Model(input, x)
 autoencoder.compile(optimizer="adam", loss="binary_crossentropy")
 autoencoder.summary()
 
-for image_batch, labels_batch in train_ds:
+for image_batch in train_ds:
     print(image_batch.shape)
-    print(labels_batch.shape)
     break
 
-for image_batch, labels_batch in val_ds:
+for image_batch in val_ds:
     print(image_batch.shape)
-    print(labels_batch.shape)
     break
 
-hist = autoencoder.fit(train_ds, validation_data=val_ds, epochs=EPOCHS)
-
+hist = autoencoder.fit(normalized_train_ds, validation_data=normalized_val_ds, epochs=EPOCHS)
+exit(4)
 print("[INFO] making predictions...")
 decoded = autoencoder.predict(val_ds)
 
 
 for i in range (0,2):
-    recon=(decoded[i] * 255).astype("uint8")
+    recon=(decoded[i]).astype("uint8")
     plt.imshow(recon)
     plt.show()
 
+index = 0
 for image, label in train_ds:
     index += 1
 plt.subplot(3, 3, index)

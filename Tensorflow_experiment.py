@@ -117,11 +117,16 @@ val_gen = image_generator.flow_from_directory(
 hist = autoencoder.fit(train_gen, validation_data=val_gen, epochs=EPOCHS)
 
 print("[INFO] making predictions...")
+
+batchX, batchy = train_gen.next()
+print('Batch shape=%s, min=%.3f, max=%.3f' % (batchX.shape, batchX.min(), batchX.max()))
+print(type(train_gen))
+
 decoded = autoencoder.predict(val_gen)
 
 
 for i in range (0,2):
-    recon=(decoded[i]* 255).astype("uint8")
+    recon = (decoded[i]* 255).astype("uint8")
     plt.imshow(recon)
     plt.show()
 
