@@ -12,11 +12,11 @@ import pathlib
 #setup data
 import os
 
-data_dir = "/Users/eriksieburgh/PycharmProjects/ScientificML/Data_Erik"
+data_dir = "/Users/eriksieburgh/PycharmProjects/ScientificML/Erik_Flow_data_normalized"
 
 batch_size = 2 #This only seems to work when batch_size = 1
 EPOCHS = 10
-SHAPE = (32, 32)
+SHAPE = (32, 64)
 
 train_datagen = tf.keras.preprocessing.image.ImageDataGenerator(
     rescale=1./255)
@@ -29,7 +29,7 @@ train_ds = tf.keras.preprocessing.image_dataset_from_directory(
     image_size=(SHAPE[0], SHAPE[1]),
     batch_size=batch_size,
     shuffle=True,
-    color_mode='rgb')
+    color_mode="grayscale")
 
 val_ds = tf.keras.preprocessing.image_dataset_from_directory(
     data_dir,
@@ -39,23 +39,23 @@ val_ds = tf.keras.preprocessing.image_dataset_from_directory(
     image_size=(SHAPE[0], SHAPE[1]),
     batch_size=batch_size,
     shuffle=True,
-    color_mode='rgb')
+    color_mode="grayscale")
 
 # Rescaling of dataset is still needed
 
-input = layers.Input(shape=(32, 32, 3))
+input = layers.Input(shape=(32, 64, 1))
 chanDim = -1
 
 # Encoder
-x = layers.Conv2D(32, (3, 3), activation="relu", padding="same")(input)
+x = layers.Conv2D(152, (3, 3), activation="relu", padding="same")(input)
 x = layers.MaxPooling2D((2, 2), padding="same")(x)
-x = layers.Conv2D(32, (3, 3), activation="relu", padding="same")(x)
+x = layers.Conv2D(152, (3, 3), activation="relu", padding="same")(x)
 x = layers.MaxPooling2D((2, 2), padding="same")(x)
 x = layers.BatchNormalization(axis=chanDim)(x)
 
 # Decoder
-x = layers.Conv2DTranspose(32, (3, 3), strides=2, activation="relu", padding="same")(x)
-x = layers.Conv2DTranspose(32, (3, 3), strides=2, activation="relu", padding="same")(x)
+x = layers.Conv2DTranspose(152, (3, 3), strides=2, activation="relu", padding="same")(x)
+x = layers.Conv2DTranspose(152, (3, 3), strides=2, activation="relu", padding="same")(x)
 x = layers.Conv2D(1, (3, 3), activation="sigmoid", padding="same")(x)
 x = layers.BatchNormalization(axis=chanDim)(x)
 
@@ -84,3 +84,10 @@ for i in range (0,2):
     recon=(decoded[i] * 255).astype("uint8")
     plt.imshow(recon)
     plt.show()
+
+for image, label in train_ds:
+    index += 1
+plt.subplot(3, 3, index)
+plt.imshow(image)
+plt.title("Class: {}".format(class_names[label]))
+plt.axis("off")
