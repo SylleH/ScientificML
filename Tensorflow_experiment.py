@@ -24,15 +24,15 @@ import os
 import matplotlib.pyplot as plt
 #from tensorflow_core.python.keras.layers import GaussianNoise, Dropout
 
-ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Data"
+ROOT_PATH = "/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML/Flow_data_colored"
 train_dir = os.path.join(ROOT_PATH, "TrainingData")
 val_dir = os.path.join(ROOT_PATH, "ValidationData")
 
 IMAGES = ROOT_PATH
-SHAPE = (52, 52) #height, width
+SHAPE = (52, 152) #height, width
 INIT_LR = 1e-3
 
-EPOCHS = 5
+EPOCHS = 185 #loss stabiel na 185 EPOCHS
 BS = 1
 
 
@@ -52,20 +52,15 @@ class ConvAutoencoder:
         #x = GaussianNoise(stddev = 0.2)(x)
 
         # apply a CONV => RELU => BN operation
-        x = Conv2D(filters=128, kernel_size=1, strides=2, padding="same")(x)
+        x = Conv2D(filters=50, kernel_size=3, strides=1, padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        # x = MaxPool2D(2)(x)
+        x = MaxPool2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
 
-        x = Conv2D(filters=256, kernel_size=1, strides=2, padding="same")(x)
+        x = Conv2D(filters=100, kernel_size=3, strides=1, padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        # x = MaxPool2D(2)(x)
+        x = MaxPool2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
-
-        # x = Conv2D(filters=64, kernel_size=2, strides=1, padding="same")(x)
-        # x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        # # #x = MaxPool2D(5)(x)
-        # #
 
         # flatten the network and then construct our latent vector
         volumeSize = K.int_shape(x)
@@ -82,25 +77,19 @@ class ConvAutoencoder:
         x = Reshape((volumeSize[1], volumeSize[2], volumeSize[3]))(x)
 
         # apply a CONV_TRANSPOSE => RELU => BN operation
-        x = Conv2DTranspose(filters=256, kernel_size=1, strides=2,padding="same")(x)
+        x = Conv2DTranspose(filters=100, kernel_size=3, strides=1,padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        #x = MaxPool2D(2)(x)
-        # x = UpSampling2D(2)(x)
+        x = UpSampling2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
 
-        x = Conv2DTranspose(filters=128, kernel_size=1, strides=2, padding="same")(x)
+        x = Conv2DTranspose(filters=50, kernel_size=3, strides=1, padding="same")(x)
         x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        # x = UpSampling2D(2)(x)
+        x = UpSampling2D(2)(x)
         x = BatchNormalization(axis=chanDim)(x)
-
-        # x = Conv2DTranspose(filters=32, kernel_size=2, strides=1, padding="same")(x)
-        # x = ReLU(max_value=None, negative_slope=0, threshold=0)(x)
-        # # x = UpSampling2D(2)(x)
-        # x = BatchNormalization(axis=chanDim)(x)
 
         # apply a single CONV_TRANSPOSE layer used to recover the
         # original depth of the image
-        x = Conv2D(depth, (4, 4), padding="same")(x)
+        x = Conv2D(depth, (3, 3), padding="same")(x)
         outputs = Activation("sigmoid")(x)
         # build the decoder model
         decoder = Model(latentInputs, outputs, name="decoder")
@@ -116,10 +105,10 @@ autoencoder.compile(loss="mse", optimizer=opt)
 encoder.summary()
 decoder.summary()
 
-image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0 / 255)
+image_generator = tf.keras.preprocessing.image.ImageDataGenerator(rescale=1.0/255)
 train_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "TrainingData"),
-    class_mode="input", target_size=SHAPE, batch_size=BS,shuffle=True
+    class_mode="input", target_size=SHAPE,  batch_size=BS,shuffle=True
 )
 val_gen = image_generator.flow_from_directory(
     os.path.join(IMAGES, "ValidationData"),
@@ -127,32 +116,14 @@ val_gen = image_generator.flow_from_directory(
 )
 hist = autoencoder.fit(train_gen, validation_data=val_gen, epochs=EPOCHS)
 
-for image_batch, labels_batch in train_gen:
-    print(image_batch.shape)
-    print(labels_batch.shape)
-    break
-
-for image_batch, labels_batch in val_gen:
-    print(image_batch.shape)
-    print(labels_batch.shape)
-    break
-
 print("[INFO] making predictions...")
 decoded = autoencoder.predict(val_gen)
 
 
 for i in range (0,2):
-    recon=(decoded[i])
-    plt.imshow(recon, cmap='jet')
+    recon=(decoded[i]* 255).astype("uint8")
+    plt.imshow(recon)
     plt.show()
-
-index = 0
-for image, label in train_gen.take(9):
-    index += 1
-plt.subplot(3, 3, index)
-plt.imshow(image)
-plt.title("Class: {}".format(class_names[label]))
-plt.axis("off")
 
 # construct a plot that plots and saves the training history
 N = np.arange(0, EPOCHS)
@@ -165,3 +136,5 @@ plt.xlabel("Epoch #")
 plt.ylabel("Loss")
 plt.legend(loc="lower left")
 plt.show()
+
+
