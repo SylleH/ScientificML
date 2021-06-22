@@ -22,17 +22,18 @@ from tensorflow.keras import backend as K
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+import pydot
 #from tensorflow_core.python.keras.layers import GaussianNoise, Dropout
 
-ROOT_PATH = "/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML/Flow_data_colored"
+ROOT_PATH = "/Users/eriksieburgh/PycharmProjects/ScientificML/Data_Sylle"
 train_dir = os.path.join(ROOT_PATH, "TrainingData")
 val_dir = os.path.join(ROOT_PATH, "ValidationData")
 
 IMAGES = ROOT_PATH
-SHAPE = (52, 152) #height, width
+SHAPE = (52, 52) #height, width
 INIT_LR = 1e-3
 
-EPOCHS = 185 #loss stabiel na 185 EPOCHS
+EPOCHS = 1 #loss stabiel na 185 EPOCHS
 BS = 1
 
 
@@ -120,9 +121,13 @@ print("[INFO] making predictions...")
 
 batchX, batchy = train_gen.next()
 print('Batch shape=%s, min=%.3f, max=%.3f' % (batchX.shape, batchX.min(), batchX.max()))
-print(type(train_gen))
+
+print(train_gen.next())
+print(type(train_gen.next()))
 
 decoded = autoencoder.predict(val_gen)
+
+print(type(decoded))
 
 
 for i in range (0,2):
@@ -142,4 +147,25 @@ plt.ylabel("Loss")
 plt.legend(loc="lower left")
 plt.show()
 
-
+# This makes two images of the model. Examples can be found in this directory.
+# tf.keras.utils.plot_model(
+#     encoder,
+#     to_file="encoder.png",
+#     show_shapes=True,
+#     show_dtype=True,
+#     show_layer_names=False,
+#     rankdir="TB",
+#     expand_nested=False,
+#     dpi=96,
+# )
+#
+# tf.keras.utils.plot_model(
+#     decoder,
+#     to_file="decoder.png",
+#     show_shapes=True,
+#     show_dtype=True,
+#     show_layer_names=False,
+#     rankdir="TB",
+#     expand_nested=False,
+#     dpi=96,
+# )

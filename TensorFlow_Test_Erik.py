@@ -14,7 +14,7 @@ import os
 
 data_dir = "/Users/eriksieburgh/Desktop/TUdelft/M-AM/Semester 2/SML_Special Topic CSE/Data_files/Flow_data_color"
 
-batch_size = 1 #This only seems to work when batch_size = 1
+batch_size = 10 #This only seems to work when batch_size = 1
 EPOCHS = 20
 SHAPE = (32, 96)
 
@@ -40,11 +40,21 @@ val_ds = tf.keras.preprocessing.image_dataset_from_directory(
     label_mode=None,
     color_mode="rgb")
 
-# Rescaling of dataset is still needed
-normalization_layer = layers.experimental.preprocessing.Rescaling(scale= 1./255)
 
-normalized_train_ds = train_ds.map(lambda x: normalization_layer(x))
-normalized_val_ds = val_ds.map(lambda x: normalization_layer(x))
+plt.figure(figsize=(10, 10))
+for images in train_ds.take(1):
+    for i in range(9):
+        ax = plt.subplot(3, 3, i + 1)
+        plt.imshow(images[i].numpy().astype("uint8"))
+        plt.axis("off")
+
+print(type(val_ds))
+
+# # Rescaling of dataset is still needed
+# normalization_layer = layers.experimental.preprocessing.Rescaling(scale= 1./255)
+#
+# normalized_train_ds = train_ds.map(lambda x: normalization_layer(x))
+# normalized_val_ds = val_ds.map(lambda x: normalization_layer(x))
 
 input = layers.Input(shape=(32, 96, 3))
 chanDim = -1
@@ -75,7 +85,7 @@ for image_batch in val_ds:
     print(image_batch.shape)
     break
 
-hist = autoencoder.fit(normalized_train_ds, validation_data=normalized_val_ds, epochs=EPOCHS)
+hist = autoencoder.fit(train_ds, validation_data=val_ds, epochs=EPOCHS)
 exit(4)
 print("[INFO] making predictions...")
 decoded = autoencoder.predict(val_ds)
