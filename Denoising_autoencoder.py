@@ -304,3 +304,17 @@ autoencoder = Model(input, decoder(encoder(input)),name="autoencoder")
 
 
 
+<<<<<<< Updated upstream
+=======
+print("[INFO] making predictions...")
+decoded = autoencoder.predict(noisy_test_data)
+print(decoded.shape)
+display(noisy_test_data, decoded)
+plt.savefig('denoised data.png')
+
+
+#for i in range (0,2):
+#    recon=(decoded[i] * 255).astype("uint8")
+#    plt.imshow(recon)
+#    plt.show()
+>>>>>>> Stashed changes
