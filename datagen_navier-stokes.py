@@ -17,7 +17,7 @@ from mshr import *
 from random import random
 
 #Define constants
-N = 100              # size data set
+N = 500             # size data set
 nu = 1              # kinematic viscosity
 
 #Define constant boundaries
@@ -120,8 +120,8 @@ def GenerateImages(u,i,N, cylinder_loc):
     p = plot(u[0])
     plt.axis('off')
     # set colormap
-    p.set_cmap("gray")
-    p.set_clim(0.0, 5.0 )
+    p.set_cmap("jet")
+    # p.set_clim(0.0, 5.0 )
     # add a title to the plot
     #plot_title = 'cylinder_loc= (%f,%f)' % (cylinder_loc[0], cylinder_loc[1])
     #plt.title(plot_title)
@@ -130,13 +130,14 @@ def GenerateImages(u,i,N, cylinder_loc):
 
     # save image to disk
     if i < (0.8 * N):  # 80% trainingdata
-        plot_name = 'Flow_data/TrainingData/data_cylinder/plot_%d.png' % (i)
+        plot_name = 'Flow_data_Erik_color/TrainingData/plot_%d.png' % (i)
         plt.savefig(plot_name, bbox_inches = 'tight', transparent = True, pad_inches = 0)
+        plt.close()
 
     else:  # 20% validationdata
-        plot_name = 'Flow_data/ValidationData/data_cylinder/plot_%d.png' % (i)
+        plot_name = 'Flow_data_Erik_color/ValidationData/plot_%d.png' % (i)
         plt.savefig(plot_name, bbox_inches = 'tight', transparent = True, pad_inches = 0)
-
+        plt.close()
 
 for i in range(N):
     cylinder_loc = cylinder_loc_list[i]
@@ -144,4 +145,4 @@ for i in range(N):
     bcs = boundary_conditions(mesh, cylinder_loc)
     u = Var_problem(W, bcs, nu)
     GenerateImages(u, i, N, cylinder_loc)
-    plt.show()
+    # plt.show()
