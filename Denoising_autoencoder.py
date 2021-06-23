@@ -24,7 +24,7 @@ from PIL import Image
 #setup data
 ROOT_PATH = "/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML_local/"
 train_dir = os.path.join(ROOT_PATH, "TrainingData")
-val_dir = os.path.join(ROOT_PATH, "ValidationData")
+test_dir = os.path.join(ROOT_PATH, "TestData")
 
 IMAGES = ROOT_PATH
 SHAPE = (48, 144) #height, width
@@ -36,7 +36,7 @@ BS = 5
 
 def create_datasets():
     train_data = []
-    files = glob.glob ("/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML_local/Flow_data_colored/TrainData*.png")
+    files = glob.glob ("/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML_local/Flow_data_colored/TrainData/*.png")
 
     for myFile in files:
         #print(myFile)
@@ -51,7 +51,7 @@ def create_datasets():
     #print(train_data.shape)
 
     test_data = []
-    files = glob.glob("/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML/Flow_data_colored/TestData/*.png")
+    files = glob.glob("/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML_local/Flow_data_colored/TestData/*.png")
 
     for myFile in files:
         # print(myFile)
