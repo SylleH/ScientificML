@@ -29,14 +29,14 @@ test_dir = os.path.join(ROOT_PATH, "TestData")
 IMAGES = ROOT_PATH
 SHAPE = (48, 144) #height, width
 depth = 3 #3 for RGB, 1 for grayscale
-INIT_LR = 1e-3
+#INIT_LR = 1e-3
 
-EPOCHS = 20 #loss stabiel na 150 EPOCHS
+EPOCHS = 200 #loss stabiel na 150 EPOCHS
 BS = 5
 
 def create_datasets():
     train_data = []
-    files = glob.glob ("/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML_local/Flow_data_colored/TrainData/*.png")
+    files = glob.glob ("/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML/Flow_data_Erik_color/TrainingData/*.png")
 
     for myFile in files:
         #print(myFile)
@@ -47,11 +47,11 @@ def create_datasets():
         train_data.append (image)
 
     train_data = np.array(train_data)
-    train_data = flow_data.astype('float32') / 255
+    train_data = train_data.astype('float32') / 255
     #print(train_data.shape)
 
     test_data = []
-    files = glob.glob("/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML_local/Flow_data_colored/TestData/*.png")
+    files = glob.glob("/Users/sylle/Documents/Master Applied Mathematics/WI4450 Special Topics in CSE, Machine Learning /ScientificML/Flow_data_Erik_color/TestData/*.png")
 
     for myFile in files:
         # print(myFile)
@@ -111,8 +111,8 @@ def build_model(hp):
     x = input
     conv_layers = hp.Int("conv_layers", min_value = 1,max_value= 3, default=2)
     for i in range(conv_layers):
-        f = hp.Int("filters_" + str(i), 10, 150, step=50, default=50)
-        ks = hp.Int("kernel_size_" + str(i), 1, 3, step=1)
+        f = hp.Int("filters_" + str(i), 25, 500, step=25, default=50)
+        ks = hp.Int("kernel_size_" + str(i), 1, 4, step=1)
         f_list[i] = f
         ks_list[i] = ks
         x = layers.Conv2D(
@@ -197,16 +197,20 @@ train_data, test_data = create_datasets()
 noisy_train_data = noise(train_data)
 noisy_test_data = noise(test_data)
 
-tuner = kt.Hyperband(build_model,objective='val_accuracy',max_epochs=3,
-                     factor=3,directory=ROOT_PATH,project_name='tuner_test')
+tuner = kt.Hyperband(build_model,objective='val_accuracy',max_epochs=150,
+                     factor=10)
 stop_early = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
 
-tuner.search(x=noisy_train_data, y=train_data, validation_split=0.2, epochs=EPOCHS, shuffle=True,batch_size = BS, callbacks=[stop_early])
+tuner.search(x=noisy_train_data, y=train_data, validation_split=0.2, shuffle=True,batch_size = BS, callbacks=[stop_early])
 # Get the optimal hyperparameters
 best_hps=tuner.get_best_hyperparameters(num_trials=1)[0]
 print(best_hps.values)
 
-#build autoencoder with these values
+#print best 10 results
+best10_models = tuner.results_summary(num_trials=10)
+print(best10_models)
+
+#build autoencoder with best values
 autoencoder = tuner.hypermodel.build(best_hps)
 history = autoencoder.fit(x=noisy_train_data, y=train_data, validation_split=0.2, epochs=EPOCHS, shuffle=True,batch_size = BS)
 
@@ -220,16 +224,6 @@ hypermodel = tuner.hypermodel.build(best_hps)
 hist = hypermodel.fit(x=noisy_train_data, y=train_data, epochs=best_epoch, validation_split=0.2,shuffle=True,batch_size = BS)
 
 hypermodel.summary()
-# tf.keras.utils.plot_model(
-#     hypermodel,
-#     to_file="encoder.png",
-#     show_shapes=True,
-#     show_dtype=True,
-#     show_layer_names=False,
-#     rankdir="TB",
-#     expand_nested=False,
-#     dpi=96,
-# )
 
 print("[INFO] making predictions...")
 decoded = autoencoder.predict(noisy_test_data)
@@ -251,7 +245,18 @@ plt.ylabel("Loss")
 plt.legend(loc="lower left")
 plt.savefig("epochs_vs_loss.png")
 plt.show()
-plt.close()
+
+
+# tf.keras.utils.plot_model(
+#     hypermodel,
+#     to_file="hypermodel.png",
+#     show_shapes=True,
+#     show_dtype=True,
+#     show_layer_names=False,
+#     rankdir="TB",
+#     expand_nested=False,
+#     dpi=96,
+# )
 
 """ORIGINAL AUTOENCODER
 #input = layers.Input(shape=(SHAPE[0], SHAPE[1],depth))
@@ -304,17 +309,3 @@ autoencoder = Model(input, decoder(encoder(input)),name="autoencoder")
 
 
 
-<<<<<<< Updated upstream
-=======
-print("[INFO] making predictions...")
-decoded = autoencoder.predict(noisy_test_data)
-print(decoded.shape)
-display(noisy_test_data, decoded)
-plt.savefig('denoised data.png')
-
-
-#for i in range (0,2):
-#    recon=(decoded[i] * 255).astype("uint8")
-#    plt.imshow(recon)
-#    plt.show()
->>>>>>> Stashed changes
